@@ -1,0 +1,28 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+gName = "Master_Single"
+mInfo = ["k8s-s", 8,  12288]
+
+Vagrant.configure("2") do |config|
+
+  config.vm.define "#{mInfo[0]}" do |cfg|
+    cfg.vm.box = "centos/7"
+    cfg.vm.provider "virtualbox" do |v|
+      v.name = "#{mInfo[0]}-vb"
+      v.cpus = mInfo[1]
+      v.memory = mInfo[2]
+      v.customize ["modifyvm", :id, "--groups", "/#{gName}"]
+    end
+    cfg.vm.hostname = "#{mInfo[0]}"
+    cfg.vm.network "private_network", ip: "192.168.1.10"
+    cfg.vm.network "forwarded_port", guest: 22, host: 60001, auto_correct: true, id: "ssh"
+    cfg.vm.synced_folder ".", "/vagrant", disabled: true
+    cfg.vm.provision "file", source: "calico.yaml", destination: "calico.yaml"
+
+    cfg.vm.provision "shell", path: "settings.sh"
+    cfg.vm.provision "shell", path: "docker_install.sh"
+    cfg.vm.provision "shell", path: "k8s_install.sh", args: "yes"
+    cfg.vm.provision "shell", path: "master.sh"
+  end
+end

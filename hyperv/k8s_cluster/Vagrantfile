@@ -1,0 +1,49 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+gName = "k8sCluster"
+mInfo = ["k8s-m", 2, 4096 ]
+wInfo = ["k8s-w", 4, 6144, 2]
+
+Vagrant.configure("2") do |config|
+
+  config.vm.define "#{mInfo[0]}" do |cfg|
+    cfg.vm.box = "centos/7"
+    cfg.vm.provider "hyperv" do |h|
+      h.vmname = "#{mInfo[0]}"
+      h.cpus = mInfo[1]
+      h.maxmemory = mInfo[2]
+      h.memory = mInfo[2]
+      h.vm_integration_services = {
+        guest_service_interface: true,
+        CustomVMSRV: true
+      }
+    end
+    cfg.vm.hostname = "#{mInfo[0]}"
+    cfg.vm.network "forwarded_port", guest: 22, host: 30001, auto_correct: true, id: "ssh"
+    cfg.vm.network "forwarded_port", guest: 6443, host: 36443, auto_correct: true, id: "kubectl"
+    cfg.vm.synced_folder "./data", "/vagrant", type: "virtualbox"
+    cfg.vm.provision "shell", path: "settings.sh"
+  end
+
+  (1..wInfo[3]).each do |i|
+    config.vm.define "#{wInfo[0]}#{i}" do |cfg|
+      cfg.vm.box = "centos/7"
+      cfg.vm.provider "hyperv" do |h|
+        h.vmname = "#{wInfo[0]}#{i}"
+        h.cpus = wInfo[1]
+        h.maxmemory = wInfo[2]
+        h.memory = wInfo[2]
+        h.vm_integration_services = {
+          guest_service_interface: true,
+          CustomVMSRV: true
+        }
+      end
+      cfg.vm.hostname = "#{wInfo[0]}#{i}"
+      cfg.vm.network "forwarded_port", guest: 22, host: "3001#{i}", auto_correct: true, id: "ssh"
+      cfg.vm.network "forwarded_port", guest: 6443, host: 36443, auto_correct: true, id: "kubectl"
+      cfg.vm.synced_folder "./data", "/vagrant", type: "virtualbox"
+      cfg.vm.provision "shell", path: "settings.sh"
+    end
+  end
+end
