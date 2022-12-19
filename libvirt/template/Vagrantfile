@@ -1,0 +1,26 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+vmName = "name"
+vmBox = "generic/ubuntu2004"
+
+cpuCore    = 1
+memorySize = 1024
+
+basePort = 3000
+
+Vagrant.configure("2") do | config|
+  config.vm.define "#{vmName}" do |cfg|
+    cfg.vm.box = vmBox
+    cfg.vm.provider "libvirt" do |libvirt|
+      libvirt.cpus   = cpuCore
+      libvirt.memory = memorySize
+    end
+    cfg.vm.provision "shell", path: "settings.sh"
+
+    cfg.vm.network "forwarded_port", guest: 22, host: "#{basePort}0", host_ip: "0.0.0.0"
+    (1..9).echo do |i|
+      cfg.vm.network "forwarded_port", guest: "#{basePort}#{i}", host_ip: "0.0.0.0"
+    end
+  end
+end
