@@ -1,0 +1,37 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+vm_box = "generic/ubuntu2004"
+#vm_box = "generic/centos8"
+group_name  = "vm-test"
+vm_info_hash = {
+    "master" => {
+        "cpus" => 2,
+        "memory" => 2048,
+        "ip_address" => "192.168.57.10"
+    },
+    "slave" => {
+        "cpus" => 2,
+        "memory" => 2048,
+        "ip_address" => "192.168.57.11"
+    }
+}
+
+Vagrant.configure("2") do |config|
+    vm_info_hash.each do |key, value|
+        config.vm.define "#{group_name}-#{key}" do |cfg|
+            cfg.vm.box = vm_box
+            cfg.vm.provider "virtualbox" do |v|
+                v.name = "#{group_name}-#{key}"
+                v.cpus = value["cpus"]
+                v.memory = value["memory"]
+                v.customize ["modifyvm", :id, "--groups", "/#{group_name}"]
+            end
+            cfg.vm.hostname = key
+            cfg.vm.network "private_network", ip: value["ip_address"]
+            
+            cfg.vm.provision "shell", path: "settings.sh"
+        end
+    end
+end
+
